@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Production builds & installers (uploaded to GitHub Releases)
+dist/
+
+# Security & Code Signing Certificates
+*.pfx
+*.key
+*.cert
+build/*.pfx
+
+# Cache & Temporary Files
+.cache/
+*.log
+.DS_Store
+Thumbs.db

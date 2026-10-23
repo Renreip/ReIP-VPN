@@ -1,0 +1,68 @@
+{
+  "name": "reipvpn",
+  "version": "1.0.0",
+  "description": "ReIP VPN - WireGuard VPN Client",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win --x64"
+  },
+  "build": {
+    "appId": "com.reipvpn.app",
+    "productName": "ReIP VPN",
+    "files": [
+      "main.js",
+      "index.html",
+      "icon.ico",
+      "rpc.js"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico",
+      "requestedExecutionLevel": "requireAdministrator",
+      "legalTrademarks": "Ren",
+      "cscLink": "build/ren-codesign.pfx",
+      "cscKeyPassword": "reipvpn123",
+      "artifactName": "ReIP VPN.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "include": "build/installer.nsh",
+      "uninstallDisplayName": "ReIP VPN",
+      "artifactName": "ReIP VPN.${ext}"
+    },
+    "extraResources": [
+      {
+        "from": "bin/wireguard.msi",
+        "to": "bin/wireguard.msi"
+      }
+    ],
+    "extraFiles": [
+      {
+        "from": "bin/wireguard.msi",
+        "to": "bin/wireguard.msi"
+      }
+    ]
+  },
+  "keywords": [
+    "vpn",
+    "wireguard",
+    "privacy",
+    "security",
+    "fast"
+  ],
+  "author": "Ren",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.20.0",
+    "discord-rpc": "^4.0.1"
+  },
+  "devDependencies": {
+    "electron": "^44.7.0",
+    "electron-builder": "^26.15.3"
+  }
+}

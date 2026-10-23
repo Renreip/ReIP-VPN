@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReIP VPN</title>
+  <style>
+    :root {
+      /* Mullvad-Inspired Refined Obsidian & Emerald Palette */
+      --bg-base: #0e141d;
+      --bg-card: #151e2a;
+      --bg-card-hover: #1b2635;
+      --bg-card-subtle: #111822;
+      
+      --border-dark: #1f2a3a;
+      --border-focus: #2d3e54;
+      --border-subtle: #16212e;
+      
+      --accent-green: #00e676;
+      --accent-green-hover: #00c853;
+      --accent-green-bg: #092316;
+      --accent-green-glow: rgba(0, 230, 118, 0.28);
+      
+      --accent-red: #f43f5e;
+      --accent-red-hover: #e11d48;
+      --accent-red-bg: #270e14;
+      --accent-red-glow: rgba(244, 63, 94, 0.28);
+      
+      --accent-amber: #f59e0b;
+      --accent-amber-bg: #271a06;
+      
+      --text-main: #ffffff;
+      --text-muted: #8b9bb0;
+      --text-faint: #556677;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-base);
+      color: var(--text-main);
+      width: 360px;
+      height: 600px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+      position: relative;
+    }
+
+    /* DRAGGABLE CUSTOM TOP BAR */
+    .titlebar {
+      height: 44px;
+      background: #090e15;
+      border-bottom: 1px solid var(--border-dark);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      -webkit-app-region: drag;
+      z-index: 100;
+      flex-shrink: 0;
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-emblem {
+      width: 17px;
+      height: 17px;
+      color: var(--accent-green);
+    }
+
+    .brand-name {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      color: #ffffff;
+      text-transform: uppercase;
+    }
+
+    .title-controls {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      -webkit-app-region: no-drag;
+    }
+
+    .header-icon-btn {
+      width: 28px;
+      height: 26px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      border-radius: 5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.18s, color 0.18s, transform 0.12s;
+    }
+
+    .header-icon-btn:hover {
+      background: #172230;
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .header-icon-btn.close:hover {
+      background: var(--accent-red);
+      color: #ffffff;
+    }
+
+    /* VIEW WRAPPER WITH SMOOTH ANIMATIONS */
+    .views-wrapper {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .view-pane {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      padding: 16px;
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+    }
+
+    .view-pane.active {
+      display: flex;
+      animation: slideFadeIn 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes slideFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* SUBVIEW HEADER */
+    .subview-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-dark);
+      flex-shrink: 0;
+    }
+
+    .back-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.18s, transform 0.15s;
+    }
+
+    .back-btn:hover {
+      color: #ffffff;
+      transform: translateX(-2px);
+    }
+
+    /* ========================================================
+       VIEW 1: CONNECTION (MAIN MULLVAD VIEW)
+       ======================================================== */
+
+    /* Server Location Card */
+    .location-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-dark);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      transition: border-color 0.2s;
+    }
+
+    .location-card:hover {
+      border-color: var(--border-focus);
+    }
+
+    .loc-card-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .flag-icon-box {
+      width: 28px;
+      height: 20px;
+      border-radius: 4px;
+      overflow: hidden;
+      flex-shrink: 0;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    }
+
+    .loc-text h3 {
+      font-size: 14px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: 0.2px;
+    }
+
+    /* Central Status Panel (Mullvad Shield Box) */
+    .connection-status-panel {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border-dark);
+      border-radius: 12px;
+      padding: 24px 18px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+
+    .connection-status-panel.connected {
+      background: linear-gradient(180deg, var(--accent-green-bg) 0%, #0f1722 100%);
+      border-color: rgba(0, 230, 118, 0.4);
+      box-shadow: 0 10px 30px var(--accent-green-glow);
+    }
+
+    .connection-status-panel.disconnected {
+      background: linear-gradient(180deg, var(--accent-red-bg) 0%, #121a24 100%);
+      border-color: rgba(244, 63, 94, 0.35);
+    }
+
+    .connection-status-panel.connecting {
+      background: linear-gradient(180deg, var(--accent-amber-bg) 0%, #131b25 100%);
+      border-color: rgba(245, 158, 11, 0.35);
+    }
+
+    .status-center-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    /* Shields: Dynamic Morph */
+    .status-shield-svg {
+      width: 58px;
+      height: 58px;
+      transition: all 0.28s ease;
+      display: none;
+    }
+
+    .connection-status-panel.connected .shield-connected {
+      display: block;
+      color: var(--accent-green);
+      filter: drop-shadow(0 0 14px var(--accent-green));
+      animation: scalePop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .connection-status-panel.disconnected .shield-disconnected {
+      display: block;
+      color: var(--accent-red);
+      filter: drop-shadow(0 0 10px rgba(244, 63, 94, 0.4));
+      animation: scalePop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .connection-status-panel.connecting .shield-connecting {
+      display: block;
+      color: var(--accent-amber);
+      animation: pulseSpin 1.4s infinite ease-in-out;
+    }
+
+    @keyframes scalePop {
+      0% { transform: scale(0.85); opacity: 0.5; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes pulseSpin {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.55; transform: scale(0.92); }
+    }
+
+    .status-main-title {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      transition: color 0.25s;
+    }
+
+    .connection-status-panel.connected .status-main-title { color: var(--accent-green); }
+    .connection-status-panel.disconnected .status-main-title { color: var(--accent-red); }
+    .connection-status-panel.connecting .status-main-title { color: var(--accent-amber); }
+
+    /* Session Timer Badge (Only when connected) */
+    .session-timer-wrap {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(0, 230, 118, 0.25);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .connection-status-panel.connected .session-timer-wrap {
+      display: flex;
+    }
+
+    .timer-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 6px var(--accent-green);
+    }
+
+    /* MULLVAD CHUNKY ACTION BUTTON */
+    .action-connect-btn {
+      width: 100%;
+      height: 50px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 0.9px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-transform: uppercase;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .action-connect-btn.connect {
+      background: var(--accent-green);
+      color: #07170e;
+      box-shadow: 0 4px 18px var(--accent-green-glow);
+    }
+
+    .action-connect-btn.connect:hover {
+      background: var(--accent-green-hover);
+      color: #ffffff;
+      transform: translateY(-1.5px);
+      box-shadow: 0 6px 22px rgba(0, 230, 118, 0.4);
+    }
+
+    .action-connect-btn.connecting {
+      background: var(--accent-amber-bg);
+      color: var(--accent-amber);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      cursor: wait;
+    }
+
+    .action-connect-btn.disconnect {
+      background: var(--accent-red);
+      color: #ffffff;
+      box-shadow: 0 4px 18px var(--accent-red-glow);
+    }
+
+    .action-connect-btn.disconnect:hover {
+      background: var(--accent-red-hover);
+      transform: translateY(-1.5px);
+      box-shadow: 0 6px 22px rgba(244, 63, 94, 0.4);
+    }
+
+    .action-connect-btn:active {
+      transform: translateY(1px);
+    }
+
+    /* BOTTOM KILL SWITCH BAR */
+    .quick-ks-bar {
+      background: var(--bg-card);
+      border: 1px solid var(--border-dark);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      transition: border-color 0.2s;
+    }
+
+    .quick-ks-bar:hover {
+      border-color: var(--border-focus);
+    }
+
+    .quick-ks-info h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .quick-ks-info p {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    /* ROUNDED TOGGLE SWITCH WITH SMOOTH EASING */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #273648;
+      transition: background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: #ffffff;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+
+    input:checked + .slider {
+      background-color: var(--accent-green);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    /* ========================================================
+       VIEW 2: LICENSE KEY (CLEAN MULLVAD CARD)
+       ======================================================== */
+    .account-card-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-dark);
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .key-input-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .key-input {
+      width: 100%;
+      height: 44px;
+      background: #090f17;
+      border: 1px solid var(--border-dark);
+      border-radius: 8px;
+      padding: 0 14px;
+      color: #ffffff;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .key-input:focus {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.15);
+    }
+
+    .activate-btn {
+      width: 100%;
+      height: 44px;
+      background: var(--accent-green);
+      color: #07170e;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .activate-btn:hover {
+      background: var(--accent-green-hover);
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .meta-row-clean {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-dark);
+      font-size: 11px;
+    }
+
+    .meta-label-clean {
+      color: var(--text-faint);
+      font-weight: 600;
+    }
+
+    .meta-val-clean {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    /* ========================================================
+       VIEW 3: SETTINGS
+       ======================================================== */
+    .settings-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .setting-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-dark);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: border-color 0.2s;
+    }
+
+    .setting-card:hover {
+      border-color: var(--border-focus);
+    }
+
+    .setting-text h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .setting-text p {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* TOAST NOTIFICATION: SMOOTH FLOATING PILL WITH EXTENDED DURATION */
+    .toast-pill {
+      position: fixed;
+      bottom: 16px;
+      left: 18px;
+      right: 18px;
+      background: #182535;
+      border: 1px solid var(--border-focus);
+      padding: 11px 16px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #ffffff;
+      display: block;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.6);
+      z-index: 999;
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(18px) scale(0.96);
+      transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .toast-pill.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .toast-pill.success {
+      border-left: 3px solid var(--accent-green);
+    }
+
+    .toast-pill.error {
+      border-left: 3px solid var(--accent-red);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP DRAGGABLE TITLEBAR -->
+  <div class="titlebar">
+    <div class="brand-wrap">
+      <span class="brand-name">ReIP VPN</span>
+    </div>
+
+    <div class="title-controls">
+      <!-- Account Button (User Icon) -->
+      <button class="header-icon-btn" onclick="switchView('account')" title="Account">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      </button>
+
+      <!-- Settings Button (Gear Icon) -->
+      <button class="header-icon-btn" onclick="switchView('settings')" title="Settings">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+
+      <!-- Minimize Window -->
+      <button class="header-icon-btn" onclick="minimizeWin()" title="Minimize">
+        <svg width="10" height="1.5" viewBox="0 0 10 1.5"><rect width="10" height="1.5" fill="currentColor"/></svg>
+      </button>
+
+      <!-- Close Window -->
+      <button class="header-icon-btn close" onclick="closeWin()" title="Close">
+        <svg width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- VIEWS CONTAINER -->
+  <div class="views-wrapper">
+
+    <!-- ========================================================
+         VIEW 1: CONNECTION (MAIN DASHBOARD)
+         ======================================================== -->
+    <div class="view-pane active" id="viewMain">
+      
+      <!-- Clean Location Card -->
+      <div class="location-card">
+        <div class="loc-card-left">
+          <div class="flag-icon-box">
+            <svg viewBox="0 0 640 480" width="100%" height="100%">
+              <rect width="640" height="160" fill="#000000"/>
+              <rect y="160" width="640" height="160" fill="#dd0000"/>
+              <rect y="320" width="640" height="160" fill="#ffce00"/>
+            </svg>
+          </div>
+          <div class="loc-text">
+            <h3>Frankfurt, Germany</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- Central Status Panel -->
+      <div class="connection-status-panel disconnected" id="heroCard">
+        <div class="status-center-wrap">
+          
+          <!-- Connected Shield with Checkmark (✔) -->
+          <svg class="status-shield-svg shield-connected" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <polyline points="9 12 11 14 15 10"/>
+          </svg>
+
+          <!-- Disconnected Shield with Cross (X) -->
+          <svg class="status-shield-svg shield-disconnected" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <line x1="9.5" y1="9.5" x2="14.5" y2="14.5"/>
+            <line x1="14.5" y1="9.5" x2="9.5" y2="14.5"/>
+          </svg>
+
+          <!-- Connecting Shield with Center Dot -->
+          <svg class="status-shield-svg shield-connecting" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <circle cx="12" cy="12" r="2.5"/>
+          </svg>
+
+          <!-- Large Status Title -->
+          <div class="status-main-title" id="heroTitle">DISCONNECTED</div>
+
+          <!-- Session Timer Badge (Visible when connected) -->
+          <div class="session-timer-wrap">
+            <span class="timer-dot"></span>
+            <span id="metricTimer">00:00:00</span>
+          </div>
+        </div>
+
+        <!-- Chunky Action Button -->
+        <button class="action-connect-btn connect" id="btnConnect" onclick="toggleConnect()">
+          <span id="btnConnectText">CONNECT</span>
+        </button>
+      </div>
+
+      <!-- Quick Toggle: Kill Switch -->
+      <div class="quick-ks-bar">
+        <div class="quick-ks-info">
+          <h4>Kill Switch</h4>
+          <p>Block traffic on connection drop</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggleKsDashboard" onchange="onKillSwitchChange(this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+    </div>
+
+    <!-- ========================================================
+         VIEW 2: LICENSE KEY (CLEAN MULLVAD STYLE)
+         ======================================================== -->
+    <div class="view-pane" id="viewAccount">
+      <!-- Back Header -->
+      <div class="subview-header">
+        <button class="back-btn" onclick="switchView('main')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Connection</span>
+        </button>
+      </div>
+
+      <!-- Key Card -->
+      <div class="account-card-box">
+        <div class="key-input-container">
+          <input type="text" id="inputLicenseKey" class="key-input" placeholder="REIP-XXXX-XXXX-XXXX" />
+          <button class="activate-btn" onclick="activateLicense()">Activate License</button>
+        </div>
+
+        <div class="meta-row-clean">
+          <span class="meta-label-clean">Valid Until</span>
+          <span class="meta-val-clean" id="licenseExpiresText">--</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         VIEW 3: SETTINGS
+         ======================================================== -->
+    <div class="view-pane" id="viewSettings">
+      <!-- Back Header -->
+      <div class="subview-header">
+        <button class="back-btn" onclick="switchView('main')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Connection</span>
+        </button>
+      </div>
+
+      <div class="settings-list">
+        <!-- 1. Auto-Connect -->
+        <div class="setting-card">
+          <div class="setting-text">
+            <h4>Auto-Connect</h4>
+            <p>Connect when ReIP VPN starts</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggleAutoConnect" onchange="onSettingChange('autoConnect', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- 2. Start on Boot -->
+        <div class="setting-card">
+          <div class="setting-text">
+            <h4>Start with Windows</h4>
+            <p>Launch on system power on</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggleStartBoot" onchange="onSettingChange('startOnBoot', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- HIDDEN COMPATIBILITY CONTAINERS -->
+  <div style="display: none;">
+    <span id="heroSubtitle"></span>
+    <span id="metricIp"></span>
+    <span id="licenseBadge"></span>
+    <span id="licenseOwnerText"></span>
+    <span id="licenseIpText"></span>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast-pill" id="toastPill"></div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    let isConnected = false;
+    let isConnecting = false;
+    let toastTimeout = null;
+
+    // View Switching
+    function switchView(viewName) {
+      document.querySelectorAll('.view-pane').forEach(el => el.classList.remove('active'));
+      if (viewName === 'account') {
+        document.getElementById('viewAccount').classList.add('active');
+      } else if (viewName === 'settings') {
+        document.getElementById('viewSettings').classList.add('active');
+      } else {
+        document.getElementById('viewMain').classList.add('active');
+      }
+    }
+
+    function formatDuration(sec) {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      return [h, m, s].map(v => v.toString().padStart(2, '0')).join(':');
+    }
+
+    // Smooth Toast Pill (Longer Duration & Soft Animation)
+    function showToast(text, type = 'info') {
+      const el = document.getElementById('toastPill');
+      if (toastTimeout) clearTimeout(toastTimeout);
+      
+      el.textContent = text;
+      el.className = `toast-pill ${type}`;
+      
+      // Trigger animation frame
+      requestAnimationFrame(() => {
+        el.classList.add('show');
+      });
+
+      toastTimeout = setTimeout(() => {
+        el.classList.remove('show');
+      }, 4200);
+    }
+
+    // State Update
+    async function updateUi() {
+      try {
+        const s = await ipcRenderer.invoke('get-state');
+        isConnected = s.connected;
+        isConnecting = s.connecting;
+
+        const hero = document.getElementById('heroCard');
+        const title = document.getElementById('heroTitle');
+        const btn = document.getElementById('btnConnect');
+        const btnText = document.getElementById('btnConnectText');
+        const timerEl = document.getElementById('metricTimer');
+
+        if (isConnected) {
+          hero.className = 'connection-status-panel connected';
+          title.textContent = 'CONNECTED';
+
+          btn.className = 'action-connect-btn disconnect';
+          btnText.textContent = 'DISCONNECT';
+
+          timerEl.textContent = formatDuration(s.duration || 0);
+
+        } else if (isConnecting) {
+          hero.className = 'connection-status-panel connecting';
+          title.textContent = 'CONNECTING...';
+
+          btn.className = 'action-connect-btn connecting';
+          btnText.textContent = 'CONNECTING...';
+
+          timerEl.textContent = '00:00:00';
+
+        } else {
+          hero.className = 'connection-status-panel disconnected';
+          title.textContent = 'DISCONNECTED';
+
+          btn.className = 'action-connect-btn connect';
+          btnText.textContent = 'CONNECT';
+
+          timerEl.textContent = '00:00:00';
+        }
+
+      } catch (err) {}
+    }
+
+    async function toggleConnect() {
+      if (isConnecting) return;
+      const btn = document.getElementById('btnConnect');
+      btn.disabled = true;
+
+      try {
+        if (isConnected) {
+          showToast('Disconnecting from Frankfurt...', 'info');
+          const res = await ipcRenderer.invoke('disconnect-vpn');
+          if (res.success) {
+            showToast('Disconnected.', 'info');
+          } else {
+            showToast('Error: ' + res.error, 'error');
+          }
+        } else {
+          showToast('Connecting to WireGuard...', 'info');
+          isConnecting = true;
+          await updateUi();
+
+          const res = await ipcRenderer.invoke('connect-vpn');
+          if (res.success) {
+            showToast('Connected securely.', 'success');
+          } else {
+            showToast('Connection failed: ' + res.error, 'error');
+          }
+        }
+      } catch (err) {
+        showToast('Operation error: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        await updateUi();
+      }
+    }
+
+    // KILL SWITCH
+    async function onKillSwitchChange(val) {
+      await ipcRenderer.invoke('update-setting', { key: 'killSwitch', value: val });
+      document.getElementById('toggleKsDashboard').checked = val;
+      showToast(val ? 'Kill Switch Activated' : 'Kill Switch Disabled', val ? 'success' : 'info');
+      await updateUi();
+    }
+
+    // SETTINGS
+    async function onSettingChange(key, val) {
+      await ipcRenderer.invoke('update-setting', { key, value: val });
+      showToast('Setting saved.', 'info');
+    }
+
+    // LICENSE MANAGEMENT
+    async function activateLicense() {
+      const input = document.getElementById('inputLicenseKey');
+      const key = (input.value || '').trim();
+      if (!key) {
+        showToast('Please enter a license key.', 'error');
+        return;
+      }
+      showToast('Verifying license with server...', 'info');
+      try {
+        const res = await ipcRenderer.invoke('verify-license', { licenseKey: key });
+        if (res.success && res.license) {
+          showToast(`License activated: ${res.license.name}`, 'success');
+          renderLicenseInfo(key, res.license);
+        } else {
+          showToast(`License error: ${res.error || 'Invalid key'}`, 'error');
+        }
+      } catch (err) {
+        showToast('Validation failed: ' + err.message, 'error');
+      }
+    }
+
+    function renderLicenseInfo(key, lic) {
+      const input = document.getElementById('inputLicenseKey');
+      const expText = document.getElementById('licenseExpiresText');
+
+      if (input) input.value = key || '';
+      if (lic && (lic.dedicatedIP || lic.assignedIP)) {
+        if (expText) {
+          const d = new Date(lic.expiresAt);
+          expText.textContent = isNaN(d) ? 'Permanent' : d.toLocaleDateString('tr-TR');
+        }
+      } else {
+        if (expText) expText.textContent = '--';
+      }
+    }
+
+    function minimizeWin() { ipcRenderer.invoke('minimize-window'); }
+    function closeWin() { ipcRenderer.invoke('close-window'); }
+
+    // Silent listener for background logs
+    ipcRenderer.on('vpn-log', () => {});
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      // Load initial settings
+      const state = await ipcRenderer.invoke('get-state');
+      if (state.settings) {
+        document.getElementById('toggleKsDashboard').checked = !!state.settings.killSwitch;
+        document.getElementById('toggleAutoConnect').checked = !!state.settings.autoConnect;
+        document.getElementById('toggleStartBoot').checked = !!state.settings.startOnBoot;
+      }
+
+      if (state.license || state.licenseKey) {
+        renderLicenseInfo(state.licenseKey, state.license);
+      } else {
+        renderLicenseInfo('', null);
+      }
+
+      updateUi();
+      setInterval(updateUi, 1000);
+    });
+  </script>
+</body>
+</html>
