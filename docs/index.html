@@ -118,24 +118,13 @@
       color: #ffffff;
     }
 
-    .nav-cta-btn {
-      background: var(--bg-card);
-      border: 1px solid var(--border-focus);
-      color: #ffffff;
-      padding: 8px 18px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 700;
-      transition: all 0.2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .nav-cta-btn:hover {
-      background: #1c2738;
-      border-color: var(--accent-green);
-      transform: translateY(-1px);
+    @media (max-width: 600px) {
+      .nav-links {
+        gap: 14px;
+      }
+      .nav-link {
+        font-size: 13px;
+      }
     }
 
     /* HERO SECTION */
@@ -646,11 +635,6 @@
         <a href="#sss" class="nav-link">Sıkça Sorulanlar</a>
         <a href="https://github.com/Renreip/ReIP-VPN" target="_blank" class="nav-link">GitHub</a>
       </div>
-
-      <a href="https://github.com/Renreip/ReIP-VPN/releases/latest" target="_blank" class="nav-cta-btn">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        <span>İndir (v1.0.0)</span>
-      </a>
     </div>
   </nav>
 
